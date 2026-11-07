@@ -1,4 +1,5 @@
 import { proto, WAPresence } from 'baileys';
+import type { RichLinkPreviewPayload } from '@api/utils/richLinkPreview';
 
 export class Quoted {
   key: proto.IMessageKey;
@@ -10,6 +11,7 @@ export class Options {
   presence?: WAPresence;
   quoted?: Quoted;
   linkPreview?: boolean;
+  richLinkPreview?: RichLinkPreviewPayload;
   encoding?: boolean;
   mentionsEveryOne?: boolean;
   mentioned?: string[];
@@ -41,6 +43,7 @@ export class Metadata {
   delay?: number;
   quoted?: Quoted;
   linkPreview?: boolean;
+  richLinkPreview?: RichLinkPreviewPayload;
   mentionsEveryOne?: boolean;
   mentioned?: string[];
   encoding?: boolean;

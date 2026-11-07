@@ -83,6 +83,7 @@ import { Instance, Message } from '@prisma/client';
 import { createJid } from '@utils/createJid';
 import { fetchLatestWaWebVersion } from '@utils/fetchLatestWaWebVersion';
 import { makeProxyAgent, makeProxyAgentUndici } from '@utils/makeProxyAgent';
+import { validateRichLinkPreview } from '@api/utils/richLinkPreview';
 import { getOnWhatsappCache, saveOnWhatsappCache } from '@utils/onWhatsappCache';
 import { status } from '@utils/renderStatus';
 import { sendTelemetry } from '@utils/sendTelemetry';
@@ -2338,7 +2339,56 @@ export class BaileysStartupService extends ChannelStartupService {
         }
       }
 
-      const linkPreview = options?.linkPreview != false ? undefined : false;
+      // V7: a previa enriquecida e opcional. Mensagens existentes continuam
+      // com o comportamento original da Evolution/Baileys.
+      let linkPreview: any = options?.linkPreview != false ? undefined : false;
+      if (options?.richLinkPreview) {
+        if (options.linkPreview === false || typeof message['conversation'] !== 'string') {
+          throw new BadRequestException('Previa enriquecida permitida apenas para texto com preview ativo.');
+        }
+        let previewData: ReturnType<typeof validateRichLinkPreview>;
+        try {
+          previewData = validateRichLinkPreview(options.richLinkPreview, message['conversation']);
+        } catch {
+          // Nao incluir no erro URLs, dados da conta nem a imagem base64.
+          throw new BadRequestException('Dados de previa enriquecida invalidos.');
+        }
+
+        // Recebe os bytes da miniatura do robo, sem buscar URLs arbitrarias
+        // a partir do servidor Evolution. Normaliza a imagem e limita pixels.
+        let jpegPreview: Buffer;
+        let jpegThumbnail: Buffer;
+        try {
+          const image = sharp(previewData.thumbnail, { limitInputPixels: 16_000_000 }).rotate();
+          jpegPreview = await image.clone().resize({
+            width: 640, height: 640, fit: 'inside', withoutEnlargement: true,
+          }).jpeg({ quality: 75 }).toBuffer();
+          jpegThumbnail = await sharp(jpegPreview).resize({
+            width: 320, height: 320, fit: 'inside', withoutEnlargement: true,
+          }).jpeg({ quality: 60 }).toBuffer();
+        } catch {
+          throw new BadRequestException('Nao foi possivel processar a miniatura da previa.');
+        }
+        const prepared = await prepareWAMessageMedia(
+          { image: jpegPreview },
+          {
+            upload: this.client.waUploadToServer,
+            mediaTypeOverride: 'thumbnail-link',
+            mediaUploadTimeoutMs: 60_000,
+          },
+        );
+        if (!prepared.imageMessage) {
+          throw new InternalServerErrorException('Evolution nao conseguiu preparar a previa enriquecida.');
+        }
+        linkPreview = {
+          'canonical-url': previewData.url,
+          'matched-text': previewData.url,
+          title: previewData.title,
+          description: previewData.description,
+          jpegThumbnail,
+          highQualityThumbnail: prepared.imageMessage,
+        };
+      }
 
       let quoted: WAMessage;
 

@@ -1,3 +1,4 @@
+import type { RichLinkPreviewPayload } from '@api/utils/richLinkPreview';
 import { proto, WAPresence } from 'baileys';
 
 export class Quoted {
@@ -10,6 +11,7 @@ export class Options {
   presence?: WAPresence;
   quoted?: Quoted;
   linkPreview?: boolean;
+  richLinkPreview?: RichLinkPreviewPayload;
   encoding?: boolean;
   mentionsEveryOne?: boolean;
   mentioned?: string[];
@@ -41,6 +43,7 @@ export class Metadata {
   delay?: number;
   quoted?: Quoted;
   linkPreview?: boolean;
+  richLinkPreview?: RichLinkPreviewPayload;
   mentionsEveryOne?: boolean;
   mentioned?: string[];
   encoding?: boolean;

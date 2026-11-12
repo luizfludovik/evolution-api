@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - stable/evolution-2.3.7
   workflow_dispatch:
 
 permissions:

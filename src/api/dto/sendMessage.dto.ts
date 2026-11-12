@@ -1,5 +1,5 @@
-import { proto, WAPresence } from 'baileys';
 import type { RichLinkPreviewPayload } from '@api/utils/richLinkPreview';
+import { proto, WAPresence } from 'baileys';
 
 export class Quoted {
   key: proto.IMessageKey;

@@ -76,9 +76,7 @@ export function validateRichLinkPreview(input: RichLinkPreviewPayload, text: str
     throw new Error('Miniatura fora do limite permitido.');
   }
   const jpeg = thumbnail.length >= 3 && thumbnail[0] === 0xff && thumbnail[1] === 0xd8 && thumbnail[2] === 0xff;
-  const png =
-    thumbnail.length >= 8 &&
-    thumbnail.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const png = thumbnail.length >= 8 && thumbnail.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   const webp =
     thumbnail.length >= 12 &&
     thumbnail.toString('ascii', 0, 4) === 'RIFF' &&

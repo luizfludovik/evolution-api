@@ -60,6 +60,7 @@ import { chatbotController, waMonitor } from '@api/server.module';
 import { CacheService } from '@api/services/cache.service';
 import { ChannelStartupService } from '@api/services/channel.service';
 import { Events, MessageSubtype, TypeMediaMessage, wa } from '@api/types/wa.types';
+import { validateRichLinkPreview } from '@api/utils/richLinkPreview';
 import { CacheEngine } from '@cache/cacheengine';
 import {
   AudioConverter,
@@ -83,7 +84,6 @@ import { Instance, Message } from '@prisma/client';
 import { createJid } from '@utils/createJid';
 import { fetchLatestWaWebVersion } from '@utils/fetchLatestWaWebVersion';
 import { makeProxyAgent, makeProxyAgentUndici } from '@utils/makeProxyAgent';
-import { validateRichLinkPreview } from '@api/utils/richLinkPreview';
 import { getOnWhatsappCache, saveOnWhatsappCache } from '@utils/onWhatsappCache';
 import { status } from '@utils/renderStatus';
 import { sendTelemetry } from '@utils/sendTelemetry';
@@ -2360,12 +2360,25 @@ export class BaileysStartupService extends ChannelStartupService {
         let jpegThumbnail: Buffer;
         try {
           const image = sharp(previewData.thumbnail, { limitInputPixels: 16_000_000 }).rotate();
-          jpegPreview = await image.clone().resize({
-            width: 640, height: 640, fit: 'inside', withoutEnlargement: true,
-          }).jpeg({ quality: 75 }).toBuffer();
-          jpegThumbnail = await sharp(jpegPreview).resize({
-            width: 320, height: 320, fit: 'inside', withoutEnlargement: true,
-          }).jpeg({ quality: 60 }).toBuffer();
+          jpegPreview = await image
+            .clone()
+            .resize({
+              width: 640,
+              height: 640,
+              fit: 'inside',
+              withoutEnlargement: true,
+            })
+            .jpeg({ quality: 75 })
+            .toBuffer();
+          jpegThumbnail = await sharp(jpegPreview)
+            .resize({
+              width: 320,
+              height: 320,
+              fit: 'inside',
+              withoutEnlargement: true,
+            })
+            .jpeg({ quality: 60 })
+            .toBuffer();
         } catch {
           throw new BadRequestException('Nao foi possivel processar a miniatura da previa.');
         }

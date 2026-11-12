@@ -1,0 +1,31 @@
+name: V7 previa enriquecida - compilacao e testes
+
+on:
+  push:
+    branches:
+      - feature/v7-link-preview-enriquecida
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependencias bloqueadas
+        run: npm ci
+      - name: Gerar cliente Prisma (sem conexao ao banco)
+        env:
+          DATABASE_PROVIDER: postgresql
+        run: npm run db:generate
+      - name: Validar miniaturas e dominios
+        run: npx tsx --test test/richLinkPreview.v7.test.ts
+      - name: Compilar Evolution 2.3.7 personalizada
+        run: npm run build
